@@ -57,22 +57,31 @@ class MacUknowParser extends WebpageParser{
 			$this->Description = $ret[0]->plaintext."\n";
 			$ret = $html->find("div[class=content]");
 			$ParseFlag = false;
+			fprintf(STDERR,"Parse function not complete\nThis parser only for MacUKnow iphone page\n");
 			foreach ($ret as $i => $block){
 				//echo "block ".$i."\n".$block->innertext."\n";
 				$content = str_get_html($block->innertext);
 				$flag = $content->find("fb:like");
 				if ($flag){
-					$ParseFlag = true;
-					$title = $content->find("font[size]");
+					$des = preg_replace("/&nbsp;/u", "", $block->plaintext);
+					$this->Description .= $des;
+					
+					$spec = $content->find("p[class=rtecenter]");
+					$spec_content = str_get_html($spec[1]->innertext);
+
+					$title = $spec_content->find("font[size]");
 					$this->AppsName = $title[0]->plaintext;
 					$this->Price = $title[1]->plaintext;
-					$spec = $content->find("p[class=rtecenter]");
-					print_r($spec);
-					//$des = mb_ereg_replace("/&nbsp;/u", "", $block->plaintext);
-					//$des = mb_ereg_replace("/bsp;/", "", $block->plaintext);
-					$des = preg_replace("/&nbsp;/u", "", $block->plaintext);
-					//$this->Description = $block->plaintext;
-					$this->Description .= $des;
+					$title = $spec_content->find("font[class=Apple-style-span]");
+					$this->AppsLang = $title[0]->plaintext;
+					
+					$pattern = sprintf("/%s/u", preg_quote($this->AppsLang));
+					$tmp = preg_replace($pattern, "", $spec_content->plaintext);
+					$pattern = sprintf("/%s/u", preg_quote($this->Price));
+					$tmp = preg_replace($pattern, NULL, $tmp);
+					$pattern = sprintf("/%s/u", preg_quote($this->AppsName));
+					$this->SoftwareType = preg_replace($pattern, NULL, $tmp);
+					$ParseFlag = true;
 				}	
 			}
 			return $ParseFlag;
@@ -84,6 +93,7 @@ class MacUknowParser extends WebpageParser{
 	public function SpecialWrite($fp){
 		//virtual
 		fprintf($fp, "<Price>%s</Price>\n", $this->Price);
+		fprintf($fp, "<SoftwareType>%s</SoftwareType>\n",$this->SoftwareType);
 		return ;
 	}
 }
