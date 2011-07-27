@@ -101,6 +101,7 @@ class MacUknowParser extends WebpageParser{
 class iapp extends WebpageParser{
 	public $Price;
 	public $SoftwareType;
+	public $Requirement;
 	public function DomFind($html, $target){
 		$ret = $html->find($target);
 		if ($ret == NULL){
@@ -114,6 +115,7 @@ class iapp extends WebpageParser{
 		//virtuaL
 		fprintf($fp, "<Price>%s</Price>\n", $this->Price);
 		fprintf($fp, "<SoftwareType>%s</SoftwareType>\n",$this->SoftwareType);
+		fprintf($fp, "<Requirement>%s</Requirement>\n",$this->Requirement);
 		return ;
 	}
 	public function Parse(){
@@ -130,6 +132,7 @@ class iapp extends WebpageParser{
 			$spec_ret = $this->DomFind($spec, "span[class=info]");
 			$this->SoftwareType = $spec_ret[0]->plaintext;
 			$this->Price = $spec_ret[1]->plaintext;
+			$this->Requirement = $spec_ret[4]->plaintext;
 			$this->AppsLang = $spec_ret[6]->plaintext;
 
 			$ret = $this->DomFind($html, "div[class=poster_papercontent]");
