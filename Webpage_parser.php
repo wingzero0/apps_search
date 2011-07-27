@@ -26,6 +26,10 @@ class WebpageParser{
 	public function __destruct(){
 		//system("rm $indexfile");
 	}
+	public static function GenerateNutchSeedURL($UrlsFileName){
+		//virtual
+		return false;
+	}
 	public function Parse(){
 		return false;
 	}
@@ -102,10 +106,10 @@ class iapp extends WebpageParser{
 	public $Price;
 	public $SoftwareType;
 	public $Requirement;
-	public function DomFind($html, $target){
+	public static function DomFind($html, $target){
 		$ret = $html->find($target);
 		if ($ret == NULL){
-			fprintf(STDERR, "html parse fail: ". $target." not found");
+			fprintf(STDERR, "html parse fail: ". $target." not found\n");
 			return NULL;
 		}else{
 			return $ret;
@@ -122,28 +126,65 @@ class iapp extends WebpageParser{
 		try {
 			$html = file_get_html($this->infile);
 			
-			$ret = $this->DomFind($html,"title");
+			$ret = iapp::DomFind($html,"title");
 			$this->Description = $ret[0]->plaintext;
 			
-			$ret = $this->DomFind($html, "div[id=app_show_data]");
+			$ret = iapp::DomFind($html, "div[id=app_show_data]");
+			if ($ret == NULL){
+				fprintf(STDERR, "skip %s\n", $this->infile);
+				return false;
+			}
 			$spec = str_get_html($ret[0]->innertext);
-			$title = $this->DomFind($spec, "h3");
+			$title = iapp::DomFind($spec, "h3");
 			$this->AppsName = $title[0]->plaintext;
-			$spec_ret = $this->DomFind($spec, "span[class=info]");
+			$spec_ret = iapp::DomFind($spec, "span[class=info]");
 			$this->SoftwareType = $spec_ret[0]->plaintext;
 			$this->Price = $spec_ret[1]->plaintext;
 			$this->Requirement = $spec_ret[4]->plaintext;
 			$this->AppsLang = $spec_ret[6]->plaintext;
 
-			$ret = $this->DomFind($html, "div[class=poster_papercontent]");
+			$ret = iapp::DomFind($html, "div[class=poster_papercontent]");
 			foreach ($ret as $i => $block){
 				//echo "block ".$i."\n".$block->innertext."\n";
 				$des = preg_replace("/&nbsp;/u", "", $block->plaintext);
 				$des = preg_replace("/\r\n/u", "\n", $des);
+				$des = preg_replace("/&/u", " ", $des);
+				//$des = preg_replace("/\n/u", "", $des);
+
+				$des = preg_replace("/<\/embed>/u", "", $des);
 				$this->Description .= $des;
 			}
 			$ParseFlag = true;
 			return $ParseFlag;
+		}catch (Execption $e){
+			echo 'Caught exception: ',  $e->getMessage(), "\n";
+			return false;
+		}	
+	}
+	public static function GenerateNutchSeedURL($UrlsFileName){
+		try{
+			$homepage = file_get_contents("http://iapp.com.tw/all_rating.php?d=2");
+			$content = str_get_html($homepage);
+			$ret = iapp::DomFind($content, "div[class=paper getByCatPaper]");
+			if ($ret ==NULL) {
+				return false;
+			}
+			$content = str_get_html($ret[0]->innertext);
+			$ret = iapp::DomFind($content, "a[href]");
+			if ($ret == NULL){
+				return false;
+			}
+			$max = intval($ret[9]->innertext);
+			$fp = fopen($UrlsFileName, "w");
+			if ($fp == NULL){
+				fprintf(STDERR, "%s open fail\n", $UrlsFileName);
+				return false;
+			}
+			for ($i = 0;$i <= $max; $i++){
+				fprintf($fp, "http://iapp.com.tw/all_rating.php?d=2&page=%d\n",$i);
+			}
+			fclose($fp);
+			return true;
 		}catch (Execption $e){
 			echo 'Caught exception: ',  $e->getMessage(), "\n";
 			return false;
