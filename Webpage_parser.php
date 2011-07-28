@@ -49,6 +49,15 @@ class WebpageParser{
 		fprintf($fp, "</Apps>\n");
 		fclose($fp);
 	}
+	public static function DomFind($html, $target){
+		$ret = $html->find($target);
+		if ($ret == NULL){
+			fprintf(STDERR, "html parse fail: ". $target." not found\n");
+			return NULL;
+		}else{
+			return $ret;
+		}
+	}
 }
 
 class MacUknowParser extends WebpageParser{
@@ -61,7 +70,6 @@ class MacUknowParser extends WebpageParser{
 			$this->Description = $ret[0]->plaintext."\n";
 			$ret = $html->find("div[class=content]");
 			$ParseFlag = false;
-			fprintf(STDERR,"Parse function not complete\nThis parser only for MacUKnow iphone page\n");
 			foreach ($ret as $i => $block){
 				//echo "block ".$i."\n".$block->innertext."\n";
 				$content = str_get_html($block->innertext);
@@ -76,7 +84,12 @@ class MacUknowParser extends WebpageParser{
 					$title = $spec_content->find("font[size]");
 					$this->AppsName = $title[0]->plaintext;
 					$this->Price = $title[1]->plaintext;
+					
 					$title = $spec_content->find("font[class=Apple-style-span]");
+					if ($title == NULL){
+						fprintf(STDERR, "skip <AppsLang> in %s\n", $this->infile);
+						return true;
+					}
 					$this->AppsLang = $title[0]->plaintext;
 					
 					$pattern = sprintf("/%s/u", preg_quote($this->AppsLang));
@@ -100,21 +113,49 @@ class MacUknowParser extends WebpageParser{
 		fprintf($fp, "<SoftwareType>%s</SoftwareType>\n",$this->SoftwareType);
 		return ;
 	}
+	public static function GenerateNutchSeedURL($UrlsFileName){
+		try{
+			$homepage = file_get_contents("http://www.macuknow.com/iphoneapps");
+			$content = str_get_html($homepage);
+			$ret = parent::DomFind($content, "li[class=pager-last last]");
+			if ($ret ==NULL) {
+				return false;
+			}
+			$content = str_get_html($ret[0]->innertext);
+			$ret = parent::DomFind($content,"a[href]");
+			if ($ret ==NULL) {
+				return false;
+			}
+			$path = $ret[0]->href;
+			$ret = preg_match("/iphoneapps\?page=(.*)/u", $path, $matches);
+			if ($ret <= 0){
+				fprintf(STDERR, "%s doesn't match\n", $path);
+				return false;
+			}
+			$max = intval($matches[1]);
+
+			$fp = fopen($UrlsFileName, "w");
+			if ($fp == NULL){
+				fprintf(STDERR, "%s open fail\n", $UrlsFileName);
+				return false;
+			}
+			for ($i = 0;$i <= $max; $i++){
+				fprintf($fp, "http://www.macuknow.com/iphoneapps?page=%d\n",$i);
+			}
+			fclose($fp);
+			
+			return true;
+		}catch (Execption $e){
+			echo 'Caught exception: ',  $e->getMessage(), "\n";
+			return false;
+		}	
+	}
 }
 
-class iapp extends WebpageParser{
+class iappParser extends WebpageParser{
 	public $Price;
 	public $SoftwareType;
 	public $Requirement;
-	public static function DomFind($html, $target){
-		$ret = $html->find($target);
-		if ($ret == NULL){
-			fprintf(STDERR, "html parse fail: ". $target." not found\n");
-			return NULL;
-		}else{
-			return $ret;
-		}
-	}
 	public function SpecialWrite($fp){
 		//virtuaL
 		fprintf($fp, "<Price>%s</Price>\n", $this->Price);
@@ -125,25 +166,25 @@ class iapp extends WebpageParser{
 	public function Parse(){
 		try {
 			$html = file_get_html($this->infile);
-			
-			$ret = iapp::DomFind($html,"title");
+
+			$ret = parent::DomFind($html,"title");
 			$this->Description = $ret[0]->plaintext;
-			
-			$ret = iapp::DomFind($html, "div[id=app_show_data]");
+
+			$ret = parent::DomFind($html, "div[id=app_show_data]");
 			if ($ret == NULL){
 				fprintf(STDERR, "skip %s\n", $this->infile);
 				return false;
 			}
 			$spec = str_get_html($ret[0]->innertext);
-			$title = iapp::DomFind($spec, "h3");
+			$title = parent::DomFind($spec, "h3");
 			$this->AppsName = $title[0]->plaintext;
-			$spec_ret = iapp::DomFind($spec, "span[class=info]");
+			$spec_ret = parent::DomFind($spec, "span[class=info]");
 			$this->SoftwareType = $spec_ret[0]->plaintext;
 			$this->Price = $spec_ret[1]->plaintext;
 			$this->Requirement = $spec_ret[4]->plaintext;
 			$this->AppsLang = $spec_ret[6]->plaintext;
 
-			$ret = iapp::DomFind($html, "div[class=poster_papercontent]");
+			$ret = parent::DomFind($html, "div[class=poster_papercontent]");
 			foreach ($ret as $i => $block){
 				//echo "block ".$i."\n".$block->innertext."\n";
 				$des = preg_replace("/&nbsp;/u", "", $block->plaintext);
@@ -165,12 +206,12 @@ class iapp extends WebpageParser{
 		try{
 			$homepage = file_get_contents("http://iapp.com.tw/all_rating.php?d=2");
 			$content = str_get_html($homepage);
-			$ret = iapp::DomFind($content, "div[class=paper getByCatPaper]");
+			$ret = parent::DomFind($content, "div[class=paper getByCatPaper]");
 			if ($ret ==NULL) {
 				return false;
 			}
 			$content = str_get_html($ret[0]->innertext);
-			$ret = iapp::DomFind($content, "a[href]");
+			$ret = parent::DomFind($content, "a[href]");
 			if ($ret == NULL){
 				return false;
 			}
