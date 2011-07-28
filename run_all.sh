@@ -7,7 +7,7 @@ crawl_dump_dir=../nutch-1.3/dump_test/
 parser_dir=./
 html_output_dir=../nutch-1.3/html_test/
 xml_output_dir=../nutch-1.3/xml_test/
-parser_type=0
+parser_type=1
 
 #crawl
 #bash crawler.sh $nutch_bin_dir $nutch_url_dir $crawl_db_dir $crawl_dump_dir $parser_dir $parser_type

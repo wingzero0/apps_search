@@ -61,7 +61,7 @@ class WebpageParser{
 }
 
 class MacUknowParser extends WebpageParser{
-	public $Price;
+	//public $Price;
 	public $SoftwareType;
 	public function Parse(){
 		try {
@@ -76,15 +76,25 @@ class MacUknowParser extends WebpageParser{
 				$flag = $content->find("fb:like");
 				if ($flag){
 					$des = preg_replace("/&nbsp;/u", "", $block->plaintext);
+					$des = preg_replace("/&/u", "", $des);
 					$this->Description .= $des;
 					
 					$spec = $content->find("p[class=rtecenter]");
+					if ($spec == NULL){
+						fprintf(STDERR, "<AppsName> not found, skip %s\n", $this->infile);
+						return false;
+					}
+
 					$spec_content = str_get_html($spec[1]->innertext);
 
-					$title = $spec_content->find("font[size]");
+					$title = $spec_content->find("span[style]");
+					if ($title == NULL){
+						fprintf(STDERR, "<AppsName> not found, skip %s\n", $this->infile);
+						return false;
+					}
 					$this->AppsName = $title[0]->plaintext;
-					$this->Price = $title[1]->plaintext;
-					
+					//$this->Price = $title[1]->plaintext;
+					/*
 					$title = $spec_content->find("font[class=Apple-style-span]");
 					if ($title == NULL){
 						fprintf(STDERR, "skip <AppsLang> in %s\n", $this->infile);
@@ -98,6 +108,7 @@ class MacUknowParser extends WebpageParser{
 					$tmp = preg_replace($pattern, NULL, $tmp);
 					$pattern = sprintf("/%s/u", preg_quote($this->AppsName));
 					$this->SoftwareType = preg_replace($pattern, NULL, $tmp);
+					 */
 					$ParseFlag = true;
 				}	
 			}
@@ -109,7 +120,7 @@ class MacUknowParser extends WebpageParser{
 	}
 	public function SpecialWrite($fp){
 		//virtual
-		fprintf($fp, "<Price>%s</Price>\n", $this->Price);
+		//fprintf($fp, "<Price>%s</Price>\n", $this->Price);
 		fprintf($fp, "<SoftwareType>%s</SoftwareType>\n",$this->SoftwareType);
 		return ;
 	}

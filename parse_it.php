@@ -22,7 +22,8 @@ default:
 	echo "none of parser\n";
 	break;
 }
-$N->Parse();
-$N->WriteToFile();
+if ($N->Parse()){
+	$N->WriteToFile();
+}
 
 ?>
