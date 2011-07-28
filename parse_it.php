@@ -16,7 +16,7 @@ case 0:
 	$N = new MacUknowParser($input, $output);
 	break;
 case 1:
-	$N = new iapp($input,$output);
+	$N = new iappParser($input,$output);
 	break;
 default:
 	echo "none of parser\n";

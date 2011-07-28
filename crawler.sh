@@ -14,7 +14,7 @@ mkdir $urls_dir
 php $parser_dir/Nutch_Url_Generate.php $urls_dir/nutch $parser_type
 
 #crawl
-#$nutch_dir/nutch crawl $urls_dir -dir $crawl_db_dir -depth 2 -topN 1000000
+$nutch_dir/nutch crawl $urls_dir -dir $crawl_db_dir -depth 2 -topN 1000000
 
 #dump html
 #only the last target_dir in crawl_db_dir/segments/ is useful for our program

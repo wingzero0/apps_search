@@ -11,13 +11,13 @@ if ( $argc >= 3){
 $N = NULL;
 switch ($type){
 case 0:
-	$ret = MacUknow::GenerateNutchSeedURL($output);
+	$ret = MacUknowParser::GenerateNutchSeedURL($output);
 	if ($ret == false){
 		return -1;
 	}
 	break;
 case 1:
-	$ret = iapp::GenerateNutchSeedURL($output);
+	$ret = iappParser::GenerateNutchSeedURL($output);
 	if ($ret == false){
 		return -1;
 	}
