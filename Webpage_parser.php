@@ -11,6 +11,7 @@ class WebpageParser{
 	public $AppsName;
 	public $AppsLang;
 	public $Description;
+	public $ParserName;
 	public function __construct($infile, $outfile){
 		$this->infile = $infile;
 		$this->outfile = $outfile;
@@ -36,17 +37,32 @@ class WebpageParser{
 	public function SpecialWrite($fp){
 		//virtual
 	}
+	public function ConstructUniqueKeyValue(){
+		//virtual
+	}
+	public function ConstructField($name, $value){
+		$s = sprintf("<field name=\"%s\">%s</field>", $name, $value);
+		return $s;
+	}
 	public function WriteToFile(){
 		$fp = fopen($this->outfile,"w");
 		if ($fp == NULL){
 			fprintf(STDERR, "%s can't be open(for write)\n", $this->outfile);
 			return false;
 		}
-		fprintf($fp, "<Apps>\n<AppsName>%s</AppsName>\n", $this->AppsName);
-		fprintf($fp, "<AppsLang>%s</AppsLang>\n", $this->AppsLang);
-		fprintf($fp, "<Description>%s</Description>\n", $this->Description);
+		fprintf($fp, "<add>\n<doc>\n");
+		
+		$unikey = $this->ConstructUniqueKeyValue();
+		$tmp = $this->ConstructField("id", $unikey);
+		fprintf($fp, "%s\n" ,$tmp);
+		$tmp = $this->ConstructField("AppsName", $this->AppsName);
+		fprintf($fp, "%s\n" ,$tmp);
+		$tmp = $this->ConstructField("AppsLang", $this->AppsLang);
+		fprintf($fp, "%s\n", $tmp);
+		$tmp = $this->ConstructField("Description", $this->Description);
+		fprintf($fp, "%s\n", $tmp);
 		$this->SpecialWrite($fp);
-		fprintf($fp, "</Apps>\n");
+		fprintf($fp, "</doc>\n</add>\n");
 		fclose($fp);
 	}
 	public static function DomFind($html, $target){
@@ -63,6 +79,10 @@ class WebpageParser{
 class MacUknowParser extends WebpageParser{
 	//public $Price;
 	public $SoftwareType;
+	public function __construct($infile, $outfile){
+		parent::__construct($infile,$outfile);
+		$this->ParserName = "MacUKnow";
+	}
 	public function Parse(){
 		try {
 			$html = file_get_html($this->infile);
@@ -93,22 +113,8 @@ class MacUknowParser extends WebpageParser{
 						return false;
 					}
 					$this->AppsName = $title[0]->plaintext;
-					//$this->Price = $title[1]->plaintext;
-					/*
-					$title = $spec_content->find("font[class=Apple-style-span]");
-					if ($title == NULL){
-						fprintf(STDERR, "skip <AppsLang> in %s\n", $this->infile);
-						return true;
-					}
-					$this->AppsLang = $title[0]->plaintext;
-					
-					$pattern = sprintf("/%s/u", preg_quote($this->AppsLang));
-					$tmp = preg_replace($pattern, "", $spec_content->plaintext);
-					$pattern = sprintf("/%s/u", preg_quote($this->Price));
-					$tmp = preg_replace($pattern, NULL, $tmp);
-					$pattern = sprintf("/%s/u", preg_quote($this->AppsName));
-					$this->SoftwareType = preg_replace($pattern, NULL, $tmp);
-					 */
+					// because the format is not consistent
+					// I skip the AppsLang and Price
 					$ParseFlag = true;
 				}	
 			}
@@ -121,7 +127,8 @@ class MacUknowParser extends WebpageParser{
 	public function SpecialWrite($fp){
 		//virtual
 		//fprintf($fp, "<Price>%s</Price>\n", $this->Price);
-		fprintf($fp, "<SoftwareType>%s</SoftwareType>\n",$this->SoftwareType);
+		$tmp = $this->ConstructField("SoftwareType", $this->SoftwareType);
+		fprintf($fp, "%s\n",$tmp);
 		return ;
 	}
 	public static function GenerateNutchSeedURL($UrlsFileName){
@@ -161,17 +168,28 @@ class MacUknowParser extends WebpageParser{
 			return false;
 		}	
 	}
+	public function ConstructUniqueKeyValue(){
+		//virtual
+		return $this->ParserName."\t".$this->AppsName;
+	}
 }
 
 class iappParser extends WebpageParser{
 	public $Price;
 	public $SoftwareType;
 	public $Requirement;
+	public function __construct($infile, $outfile){
+		parent::__construct($infile,$outfile);
+		$this->ParserName = "iapp";
+	}
 	public function SpecialWrite($fp){
-		//virtuaL
-		fprintf($fp, "<Price>%s</Price>\n", $this->Price);
-		fprintf($fp, "<SoftwareType>%s</SoftwareType>\n",$this->SoftwareType);
-		fprintf($fp, "<Requirement>%s</Requirement>\n",$this->Requirement);
+		//virtual
+		$tmp = $this->ConstructField("Price", $this->Price);
+		fprintf($fp, "%s\n", $tmp);
+		$tmp = $this->ConstructField("SoftwareType", $this->SoftwareType);
+		fprintf($fp, "%s\n", $tmp);
+		$tmp = $this->ConstructField("Requirement", $this->Requirement);
+		fprintf($fp, "%s\n", $tmp);
 		return ;
 	}
 	public function Parse(){
@@ -241,6 +259,10 @@ class iappParser extends WebpageParser{
 			echo 'Caught exception: ',  $e->getMessage(), "\n";
 			return false;
 		}	
+	}
+	public function ConstructUniqueKeyValue(){
+		//virtual
+		return $this->ParserName."\t".$this->AppsName;
 	}
 }
 ?>
